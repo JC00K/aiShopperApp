@@ -2,6 +2,9 @@ import { View, Text, StyleSheet, SectionList } from "react-native";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../provider/AuthProvider";
 import { supabase } from "../../config/initSupabase";
+import BottomGrocerySheet from "@/components/BottomGrocerySheet";
+import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const Page = () => {
   const [listItems, setListItems] = useState<any[]>([]);
@@ -54,8 +57,12 @@ const Page = () => {
     fetchData();
   }, []);
 
+  const onAddItem = async (name: string, categoryId: number) => {
+    console.log("Item Added", name);
+  };
+
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       {listItems.length > 0 && (
         <SectionList
           renderSectionHeader={({ section: { category } }) => (
@@ -66,7 +73,13 @@ const Page = () => {
         />
       )}
       <Text>Page</Text>
-    </View>
+      <BottomGrocerySheet
+        groceryOptions={groceryOptions}
+        onItemSelected={(item, category) => {
+          onAddItem(item, category);
+        }}
+      />
+    </GestureHandlerRootView>
   );
 };
 export default Page;
