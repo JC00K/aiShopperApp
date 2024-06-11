@@ -90,6 +90,7 @@ const Page = () => {
         .from("products")
         .update({ historic: true })
         .eq("id", grocery.id);
+
       const category = listItems.find(
         (category) => category.id === grocery.category
       );
