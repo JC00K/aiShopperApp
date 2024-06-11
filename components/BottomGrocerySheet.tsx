@@ -1,9 +1,17 @@
 import { useMemo, useRef, useState } from "react";
-import { View, StyleSheet, Text, ListRenderItem } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+  ListRenderItem,
+  TouchableOpacity,
+} from "react-native";
 import BottomSheet, {
   BottomSheetFlatList,
   BottomSheetTextInput,
 } from "@gorhom/bottom-sheet";
+import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "@/config/initSupabase";
 
 interface Props {
   groceryOptions: any[];
@@ -14,8 +22,29 @@ const BottomGrocerySheet = (props: Props) => {
   const snapPoints = useMemo(() => ["14%", "75%"], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [item, setItem] = useState("");
+
   const renderRecommendationRow: ListRenderItem<any> = ({ item }) => {
-    return <Text style={{ color: "#fff" }}>{item}</Text>;
+    const onAddItem = async () => {
+      console.log(item);
+
+      const { data } = await supabase.functions.invoke("getEmbedding", {
+        body: { input: item },
+      });
+      const { data: documents } = await supabase.rpc("match_category", {
+        query_embedding: data.embedding,
+        match_threshold: 0.8,
+        match_count: 1,
+      });
+      props.onItemSelected(item, documents[0].id);
+      setItem("");
+      bottomSheetRef.current?.collapse();
+    };
+    return (
+      <TouchableOpacity style={styles.groceryRow} onPress={onAddItem}>
+        <Text style={{ color: "#fff", fontSize: 20, flex: 1 }}>{item}</Text>
+        <Ionicons name="add-circle-outline" size={24} color={"#fff"} />
+      </TouchableOpacity>
+    );
   };
   return (
     <BottomSheet

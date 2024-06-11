@@ -1,10 +1,18 @@
-import { View, Text, StyleSheet, SectionList } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  SectionList,
+  TouchableOpacity,
+} from "react-native";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../provider/AuthProvider";
 import { supabase } from "../../config/initSupabase";
 import BottomGrocerySheet from "@/components/BottomGrocerySheet";
 import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ListRenderItem } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const Page = () => {
   const [listItems, setListItems] = useState<any[]>([]);
@@ -59,6 +67,49 @@ const Page = () => {
 
   const onAddItem = async (name: string, categoryId: number) => {
     console.log("Item Added", name);
+    console.log("Category ID", categoryId);
+    const result = await supabase
+      .from("products")
+      .insert([{ name, category: categoryId, user_id: user?.id }])
+      .select();
+
+    if (result.data) {
+      console.log("Result", result.data);
+      const category = listItems.find((category) => category.id === categoryId);
+      if (category) {
+        category.data.push(result.data[0]);
+        setListItems((prev) => [...prev]);
+      }
+    }
+  };
+
+  const renderGroceryRow: ListRenderItem<any> = ({ item: grocery }) => {
+    const onSelect = async () => {
+      console.log("UPDATE: ", grocery);
+      await supabase
+        .from("products")
+        .update({ historic: true })
+        .eq("id", grocery.id);
+      const category = listItems.find(
+        (category) => category.id === grocery.category
+      );
+      if (category) {
+        category.data = category.data.filter(
+          (item: any) => item.id !== grocery.id
+        );
+        setListItems((prev) => [...prev]);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={[styles.groceryRow, { backgroundColor: "#0c3824" }]}
+        onPress={onSelect}
+      >
+        <Text style={styles.groceryName}>{grocery.name}</Text>
+        <Ionicons name="checkmark" size={24} color="white" />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -70,6 +121,7 @@ const Page = () => {
           )}
           contentContainerStyle={{ paddingBottom: 150 }}
           sections={listItems}
+          renderItem={renderGroceryRow}
         />
       )}
       <Text>Page</Text>
